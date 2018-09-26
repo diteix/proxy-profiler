@@ -32,7 +32,7 @@ namespace ProxyProfiler
 
             MethodProfileInfo methodProfileInfo;
 
-            if ((methodProfileInfo = cache[MethodProfileInfo.CreateMethodProfileInfoKey(methodInfo)] as MethodProfileInfo) == null)
+            if ((methodProfileInfo = GetMethodProfileInfo(methodInfo)) == null)
             {
                 methodProfileInfo = new MethodProfileInfo(methodInfo);
 
@@ -64,9 +64,13 @@ namespace ProxyProfiler
                 throw new NotSupportedException("Generic type 'T' must be an interface");
             }
 
-            var profileInfo = cache[MethodProfileInfo.CreateMethodProfileInfoKey(methodInfo)] as MethodProfileInfo;
+            return GetMethodProfileInfo(methodInfo)
+                .GetHistory(MethodProfileInfo.BuilLambdaObjectAndMethodKey()(profiledObject, methodInfo));
+        }
 
-            return profileInfo.GetHistory(((long)MethodProfileInfo.CreateObjectProfileInfoKey(profiledObject) << 32) + MethodProfileInfo.CreateMethodProfileInfoKey(methodInfo));
+        private static MethodProfileInfo GetMethodProfileInfo(MethodInfo methodInfo)
+        {
+            return cache[MethodProfileInfo.CreateMethodProfileInfoKey(methodInfo)] as MethodProfileInfo;
         }
 
         private sealed class MethodProfileInfo
@@ -287,24 +291,12 @@ namespace ProxyProfiler
                 NewExpression history)
             {
                 var methodAddHistory = typeof(MethodProfileInfo).GetMethod(nameof(MethodProfileInfo.AddHistory));
-                var methodCreateObjectProfileInfoKey = typeof(MethodProfileInfo).GetMethod(nameof(MethodProfileInfo.CreateObjectProfileInfoKey));
-                var methodCreateMethodProfileInfoKey = typeof(MethodProfileInfo).GetMethod(nameof(MethodProfileInfo.CreateMethodProfileInfoKey));
 
                 return Expression.Call(
                     methodProfileInfo,
                     methodAddHistory,
                     history,
-                    Expression.Add(
-                        Expression.LeftShift(
-                            Expression.Convert(
-                                Expression.Call(
-                                    methodCreateObjectProfileInfoKey,
-                                    profiledObject),
-                                typeof(long)),
-                            Expression.Constant(32)),
-                        Expression.Convert(
-                            Expression.Call(methodCreateMethodProfileInfoKey, methodInfo),
-                            typeof(long))));
+                    BuildObjectAndMethodKey(profiledObject, methodInfo));
             }
 
             private NewExpression BuildNewMethodProfileInfoHistory(
@@ -326,6 +318,39 @@ namespace ProxyProfiler
             public static int CreateObjectProfileInfoKey(T profiledObject)
             {
                 return profiledObject.GetHashCode();
+            }
+
+            public static Func<T, MethodInfo, long> BuilLambdaObjectAndMethodKey()
+            {
+                var profiledObject = Expression.Parameter(typeof(T), "profiledObject");
+                var methodInfo = Expression.Parameter(typeof(MethodInfo), "methodInfo");
+
+                return Expression.Lambda<Func<T, MethodInfo, long>>(
+                    BuildObjectAndMethodKey(profiledObject, methodInfo),
+                    profiledObject,
+                    methodInfo).Compile();
+            }
+
+            private static BinaryExpression BuildObjectAndMethodKey(
+                ParameterExpression profiledObject,
+                ParameterExpression methodInfo)
+            {
+                var methodCreateObjectProfileInfoKey = typeof(MethodProfileInfo)
+                    .GetMethod(nameof(MethodProfileInfo.CreateObjectProfileInfoKey));
+                var methodCreateMethodProfileInfoKey = typeof(MethodProfileInfo)
+                    .GetMethod(nameof(MethodProfileInfo.CreateMethodProfileInfoKey));
+
+                return Expression.Add(
+                        Expression.LeftShift(
+                            Expression.Convert(
+                                Expression.Call(
+                                    methodCreateObjectProfileInfoKey,
+                                    profiledObject),
+                                typeof(long)),
+                            Expression.Constant(32)),
+                        Expression.Convert(
+                            Expression.Call(methodCreateMethodProfileInfoKey, methodInfo),
+                            typeof(long)));
             }
 
             public sealed class AttributeInstancePair
@@ -367,14 +392,5 @@ namespace ProxyProfiler
                 return items;
             }
         }
-    }
-
-    public interface IMethodExecutionHistory
-    {
-        object[] Args { get; }
-
-        long ElapsedMilliseconds { get; }
-
-        DateTime ExecutionDateTime { get; }
     }
 }

@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attribute\ProfilerAttribute.cs" />
+    <Compile Include="Interfaces\IMethodExecutionHistory.cs" />
     <Compile Include="Interfaces\IProfilerAttribute.cs" />
     <Compile Include="ProxyProfiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
