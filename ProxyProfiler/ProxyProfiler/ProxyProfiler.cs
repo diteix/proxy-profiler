@@ -38,10 +38,7 @@ namespace ProxyProfiler
 
         public static T Create(T objectToProfile)
         {
-            if (!typeof(T).IsInterface)
-            {
-                throw new NotSupportedException("Generic type 'T' must be an interface");
-            }
+            ThrowNotInterfaceException();
 
             return (T)new ProxyProfiler<T>(objectToProfile).GetTransparentProxy();
         }
@@ -56,10 +53,7 @@ namespace ProxyProfiler
 
         public static IEnumerable<IMethodExecutionHistory> GetHistory(T profiledObject, MethodInfo methodInfo)
         {
-            if (!typeof(T).IsInterface)
-            {
-                throw new NotSupportedException("Generic type 'T' must be an interface");
-            }
+            ThrowNotInterfaceException();
 
             return GetMethodProfileInfo(methodInfo)
                 .GetHistory(MethodProfileInfo<T>.BuilLambdaObjectAndMethodKey()(profiledObject, methodInfo));
@@ -68,6 +62,14 @@ namespace ProxyProfiler
         private static MethodProfileInfo<T> GetMethodProfileInfo(MethodInfo methodInfo)
         {
             return _cache[MethodProfileInfo<T>.CreateMethodProfileInfoKey(methodInfo)];
+        }
+
+        private static void ThrowNotInterfaceException()
+        {
+            if (!typeof(T).IsInterface)
+            {
+                throw new NotSupportedException("Generic type 'T' must be an interface");
+            }
         }
     }
 }
