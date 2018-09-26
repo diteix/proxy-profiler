@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attribute\ProfilerAttribute.cs" />
+    <Compile Include="Classes\HybridDictionary.cs" />
+    <Compile Include="Classes\MethodProfileInfo.cs" />
     <Compile Include="Interfaces\IMethodExecutionHistory.cs" />
     <Compile Include="Interfaces\IProfilerAttribute.cs" />
     <Compile Include="ProxyProfiler.cs" />
