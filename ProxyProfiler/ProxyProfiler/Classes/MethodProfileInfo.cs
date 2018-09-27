@@ -140,6 +140,7 @@ namespace ProxyProfiler.Classes
 
             return Expression.Block(new[] { invokeResult, stopWatch },
                 Expression.Assign(stopWatch, Expression.New(typeof(Stopwatch))),
+                Expression.Assign(invokeResult, Expression.Constant(new object(), typeof(object))),
                 Expression.TryCatchFinally(
                     BuildTryBody(profiledObject, methodInfo, methodCall, invokeResult, stopWatch),
                     BuildFinallyBody(profiledObject, methodProfileInfo, methodInfo, methodCall, invokeResult, stopWatch),
@@ -194,12 +195,16 @@ namespace ProxyProfiler.Classes
             var block = Expression.Block(
                 Expression.Call(stopWatch, typeof(Stopwatch).GetMethod(nameof(Stopwatch.Stop))),
                 Expression.Block(this.ExecuteProfilersAfter(methodInfo, invokeResult)),
-                BuildAddHistory(profiledObject, methodProfileInfo, methodInfo, BuildNewMethodProfileInfoHistory(methodCall, stopWatch)));
+                BuildAddHistory(
+                    profiledObject,
+                    methodProfileInfo,
+                    methodInfo,
+                    BuildNewMethodProfileInfoHistory(methodCall, stopWatch)));
 
             var method = typeof(Task).GetMethod(nameof(Task.ContinueWith), new Type[] { typeof(Action<Task>) });
 
             return Expression.IfThenElse(
-                Expression.TypeEqual(invokeResult, typeof(Task)),
+                Expression.TypeIs(invokeResult, typeof(Task)),
                 Expression.Call(
                     Expression.Convert(invokeResult, typeof(Task)),
                     method,
@@ -291,7 +296,7 @@ namespace ProxyProfiler.Classes
                         typeof(long)));
         }
 
-        private sealed class AttributeInstancePair
+        internal sealed class AttributeInstancePair
         {
             public IProfilerAttribute Attribute { get; set; }
 
