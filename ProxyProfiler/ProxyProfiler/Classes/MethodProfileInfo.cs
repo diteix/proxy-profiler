@@ -69,16 +69,27 @@ namespace ProxyProfiler.Classes
             return _methodProfilesInfoHistory[historyKey];
         }
 
-        public IEnumerable<Expression> ExecuteProfilersBefore(Expression methodInfo)
+        public IEnumerable<Expression> ExecuteProfilersBefore(ParameterExpression methodInfo, ParameterExpression methodCall)
         {
-            return ExecuteProfilerAction(typeof(IProfilerAttribute).GetMethod(nameof(IProfilerAttribute.OnBeforeInvoke)), methodInfo);
+            return ExecuteProfilerAction(
+                typeof(IProfilerAttribute).GetMethod(nameof(IProfilerAttribute.OnBeforeInvoke)),
+                methodInfo,
+                Expression.PropertyOrField(
+                    Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args)));
         }
 
-        public IEnumerable<Expression> ExecuteProfilersAfter(Expression methodInfo, Expression invokeResult)
+        public IEnumerable<Expression> ExecuteProfilersAfter(
+            ParameterExpression methodInfo,
+            ParameterExpression methodCall,
+            ParameterExpression args,
+            ParameterExpression invokeResult)
         {
             return ExecuteProfilerAction(
                 typeof(IProfilerAttribute).GetMethod(nameof(IProfilerAttribute.OnAfterInvoke)),
                 methodInfo,
+                Expression.PropertyOrField(
+                    Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args)),
+                args,
                 invokeResult);
         }
 
@@ -135,15 +146,16 @@ namespace ProxyProfiler.Classes
             ParameterExpression methodInfo,
             ParameterExpression methodCall)
         {
+            var args = Expression.Parameter(typeof(object[]), "args");
             var invokeResult = Expression.Parameter(typeof(object), "invokeResult");
             var stopWatch = Expression.Parameter(typeof(Stopwatch), "stopWatch");
 
-            return Expression.Block(new[] { invokeResult, stopWatch },
+            return Expression.Block(new[] { args, invokeResult, stopWatch },
                 Expression.Assign(stopWatch, Expression.New(typeof(Stopwatch))),
                 Expression.Assign(invokeResult, Expression.Constant(new object(), typeof(object))),
                 Expression.TryCatchFinally(
-                    BuildTryBody(profiledObject, methodInfo, methodCall, invokeResult, stopWatch),
-                    BuildFinallyBody(profiledObject, methodProfileInfo, methodInfo, methodCall, invokeResult, stopWatch),
+                    BuildTryBody(profiledObject, methodInfo, methodCall, args, invokeResult, stopWatch),
+                    BuildFinallyBody(profiledObject, methodProfileInfo, methodInfo, methodCall, args, invokeResult, stopWatch),
                     BuildCatchBody(methodInfo, methodCall)));
         }
 
@@ -151,20 +163,18 @@ namespace ProxyProfiler.Classes
             ParameterExpression profiledObject,
             ParameterExpression methodInfo,
             ParameterExpression methodCall,
+            ParameterExpression args,
             ParameterExpression invokeResult,
             ParameterExpression stopWatch)
         {
             var method = typeof(MethodBase).GetMethods()
                 .FirstOrDefault(s => s.Name == nameof(MethodBase.Invoke) && s.GetParameters().Count() == 2);
 
-            var outRefArgs = Expression.Parameter(typeof(object[]), "outRefArgs");
-
             return Expression.Block(
                 typeof(IMessage),
-                new[] { outRefArgs },
-                Expression.Block(this.ExecuteProfilersBefore(methodInfo)),
+                Expression.Block(this.ExecuteProfilersBefore(methodInfo, methodCall)),
                 Expression.Assign(
-                    outRefArgs,
+                    args,
                     Expression.PropertyOrField(
                         Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args))),
                 Expression.Call(stopWatch, typeof(Stopwatch).GetMethod(nameof(Stopwatch.Start))),
@@ -174,11 +184,11 @@ namespace ProxyProfiler.Classes
                         methodInfo,
                         method,
                         profiledObject,
-                        outRefArgs)),
+                        args)),
                 Expression.New(
                     typeof(ReturnMessage).GetConstructors()[0],
                     invokeResult,
-                    outRefArgs,
+                    args,
                     Expression.Subtract(
                         Expression.PropertyOrField(
                             Expression.Convert(methodCall, typeof(IMethodMessage)),
@@ -195,17 +205,18 @@ namespace ProxyProfiler.Classes
             ParameterExpression methodProfileInfo,
             ParameterExpression methodInfo,
             ParameterExpression methodCall,
+            ParameterExpression args,
             ParameterExpression invokeResult,
             ParameterExpression stopWatch)
         {
             var block = Expression.Block(
                 Expression.Call(stopWatch, typeof(Stopwatch).GetMethod(nameof(Stopwatch.Stop))),
-                Expression.Block(this.ExecuteProfilersAfter(methodInfo, invokeResult)),
+                Expression.Block(this.ExecuteProfilersAfter(methodInfo, methodCall, args, invokeResult)),
                 BuildAddHistory(
                     profiledObject,
                     methodProfileInfo,
                     methodInfo,
-                    BuildNewMethodProfileInfoHistory(methodCall, stopWatch)));
+                    BuildNewMethodProfileInfoHistory(methodCall, args, stopWatch)));
 
             var method = typeof(Task).GetMethod(nameof(Task.ContinueWith), new Type[] { typeof(Action<Task>) });
 
@@ -250,12 +261,14 @@ namespace ProxyProfiler.Classes
 
         private NewExpression BuildNewMethodProfileInfoHistory(
             ParameterExpression methodCall,
+            ParameterExpression args,
             ParameterExpression stopWatch)
         {
             return Expression.New(
                 typeof(MethodProfileInfoHistory).GetConstructors()[0],
                 Expression.PropertyOrField(
                     Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args)),
+                args,
                 Expression.PropertyOrField(stopWatch, nameof(Stopwatch.ElapsedMilliseconds)));
         }
 
@@ -317,15 +330,18 @@ namespace ProxyProfiler.Classes
 
         internal sealed class MethodProfileInfoHistory : IMethodExecutionHistory
         {
-            public object[] Args { get; private set; }
+            public object[] BeforeInvokeArgs { get; private set; }
+
+            public object[] AfterInvokeArgs { get; private set; }
 
             public long ElapsedMilliseconds { get; private set; }
 
             public DateTime ExecutionDateTime { get; private set; }
 
-            public MethodProfileInfoHistory(object[] args, long elapsedMilliseconds)
+            public MethodProfileInfoHistory(object[] beforeInvokeArgs, object[] afterInvokeArgs, long elapsedMilliseconds)
             {
-                Args = args;
+                BeforeInvokeArgs = beforeInvokeArgs;
+                AfterInvokeArgs = afterInvokeArgs;
                 ElapsedMilliseconds = elapsedMilliseconds;
                 ExecutionDateTime = DateTime.Now;
             }

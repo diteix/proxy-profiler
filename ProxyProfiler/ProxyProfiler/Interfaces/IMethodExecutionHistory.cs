@@ -4,7 +4,9 @@ namespace ProxyProfiler.Interfaces
 {
     public interface IMethodExecutionHistory
     {
-        object[] Args { get; }
+        object[] BeforeInvokeArgs { get; }
+
+        object[] AfterInvokeArgs { get; }
 
         long ElapsedMilliseconds { get; }
 

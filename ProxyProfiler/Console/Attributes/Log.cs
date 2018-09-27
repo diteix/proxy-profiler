@@ -12,14 +12,14 @@ namespace Console.Attributes
 
         }
 
-        public override void OnBeforeInvoke<T>(T profiler, MethodInfo methodToInvoke)
+        public override void OnBeforeInvoke<T>(T profiler, MethodInfo methodToInvoke, object[] beforeInvokeArgs)
         {
             var instance = (ILog)profiler;
 
             instance.Debug("teste atributo before");
         }
 
-        public override void OnAfterInvoke<T>(T profiler, MethodInfo invokedMethod, object invokeResult)
+        public override void OnAfterInvoke<T>(T profiler, MethodInfo invokedMethod, object[] beforeInvokeArgs, object[] afterInvokeArgs, object invokeResult)
         {
             var instance = (ILog)profiler;
 

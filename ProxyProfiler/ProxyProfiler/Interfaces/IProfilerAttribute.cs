@@ -8,9 +8,9 @@ namespace ProxyProfiler.Interfaces
     {
         Type ProfileType { get; }
 
-        void OnBeforeInvoke<T>(T profiler, MethodInfo methodToInvoke) where T : class, new();
+        void OnBeforeInvoke<T>(T profiler, MethodInfo methodToInvoke, object[] beforeInvokeArgs) where T : class, new();
 
-        void OnAfterInvoke<T>(T profiler, MethodInfo invokedMethod, object invokeResult) where T : class, new();
+        void OnAfterInvoke<T>(T profiler, MethodInfo invokedMethod, object[] beforeInvokeArgs, object[] afterInvokeArgs, object invokeResult) where T : class, new();
 
         void OnInvokeException<T>(T profiler, MethodInfo invokedMethod, Exception exception) where T : class, new();
     }
