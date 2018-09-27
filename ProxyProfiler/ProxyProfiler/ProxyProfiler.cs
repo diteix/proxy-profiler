@@ -12,7 +12,7 @@ namespace ProxyProfiler
     {
         private readonly T _profiledObject;
 
-        private static IDictionary<int, MethodProfileInfo<T>> _cache = new HybridDictionary<int, MethodProfileInfo<T>>(true);
+        private static IDictionary<int, MethodProfilerInfo<T>> _cache = new HybridDictionary<int, MethodProfilerInfo<T>>(true);
 
         private ProxyProfiler(T profiledObject) : base(typeof(T))
         {
@@ -24,11 +24,11 @@ namespace ProxyProfiler
             var methodCall = msg as IMethodCallMessage;
             var methodInfo = methodCall.MethodBase as MethodInfo;
 
-            MethodProfileInfo<T> methodProfileInfo;
+            MethodProfilerInfo<T> methodProfileInfo;
 
             if ((methodProfileInfo = GetMethodProfileInfo(methodInfo)) == null)
             {
-                methodProfileInfo = new MethodProfileInfo<T>(methodInfo);
+                methodProfileInfo = new MethodProfilerInfo<T>(methodInfo);
 
                 _cache.Add(methodProfileInfo.MethodProfileInfoKey, methodProfileInfo);
             }
@@ -56,12 +56,12 @@ namespace ProxyProfiler
             ThrowNotInterfaceException();
 
             return GetMethodProfileInfo(methodInfo)
-                .GetHistory(MethodProfileInfo<T>.BuilLambdaObjectAndMethodKey()(profiledObject, methodInfo));
+                .GetHistory(MethodProfilerInfo<T>.BuilLambdaObjectAndMethodKey()(profiledObject, methodInfo));
         }
 
-        private static MethodProfileInfo<T> GetMethodProfileInfo(MethodInfo methodInfo)
+        private static MethodProfilerInfo<T> GetMethodProfileInfo(MethodInfo methodInfo)
         {
-            return _cache[MethodProfileInfo<T>.CreateMethodProfileInfoKey(methodInfo)];
+            return _cache[MethodProfilerInfo<T>.CreateMethodProfileInfoKey(methodInfo)];
         }
 
         private static void ThrowNotInterfaceException()

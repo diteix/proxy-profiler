@@ -11,21 +11,18 @@ using System.Threading.Tasks;
 
 namespace ProxyProfiler.Classes
 {
-    internal sealed class MethodProfileInfo<T>
+    internal sealed class MethodProfilerInfo<T>
     {
-        private Expression<Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> _lambdaExpression;
-        private Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage> _builtExpression;
-        private IDictionary<long, LinkedList<MethodProfileInfoHistory>> _methodProfilesInfoHistory =
-            new HybridDictionary<long, LinkedList<MethodProfileInfoHistory>>(true);
+        private Expression<Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> _lambdaExpression;
+        private Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage> _builtExpression;
+        private IDictionary<long, MethodProfileInfo> _methodProfilesInfos = new HybridDictionary<long, MethodProfileInfo>(true);
         private IEnumerable<AttributeInstancePair> ProfilerAttributes;
 
         public int MethodProfileInfoKey { get; private set; }
 
-        public int ExecutionCount { get; private set; }
-
         public MethodInfo MethodInfo { get; private set; }
 
-        public Expression<Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> LambdaExpression
+        public Expression<Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> LambdaExpression
         {
             get
             {
@@ -33,7 +30,7 @@ namespace ProxyProfiler.Classes
             }
         }
 
-        public Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage> BuiltExpression
+        public Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage> BuiltExpression
         {
             get
             {
@@ -41,7 +38,7 @@ namespace ProxyProfiler.Classes
             }
         }
 
-        public MethodProfileInfo(MethodInfo methodInfo)
+        public MethodProfilerInfo(MethodInfo methodInfo)
         {
             MethodProfileInfoKey = CreateMethodProfileInfoKey(methodInfo);
             MethodInfo = methodInfo;
@@ -51,22 +48,21 @@ namespace ProxyProfiler.Classes
 
         public void AddHistory(MethodProfileInfoHistory history, long historyKey)
         {
-            ExecutionCount++;
+            MethodProfileInfo methodProfileInfo;
 
-            LinkedList<MethodProfileInfoHistory> historic;
-
-            if ((historic = _methodProfilesInfoHistory[historyKey]) == null)
+            if ((methodProfileInfo = _methodProfilesInfos[historyKey]) == null)
             {
-                historic = new LinkedList<MethodProfileInfoHistory>();
-                _methodProfilesInfoHistory.Add(historyKey, historic);
+                methodProfileInfo = new MethodProfileInfo();
+                _methodProfilesInfos.Add(historyKey, methodProfileInfo);
             }
 
-            historic.AddFirst(history);
+            methodProfileInfo.ExecutionCount++;
+            methodProfileInfo.History.AddFirst(history);
         }
 
         public IEnumerable<IMethodExecutionHistory> GetHistory(long historyKey)
         {
-            return _methodProfilesInfoHistory[historyKey];
+            return _methodProfilesInfos[historyKey].History;
         }
 
         public IEnumerable<Expression> ExecuteProfilersBefore(ParameterExpression methodInfo, ParameterExpression methodCall)
@@ -125,14 +121,14 @@ namespace ProxyProfiler.Classes
             }
         }
 
-        private Expression<Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> BuildLambdaExpression()
+        private Expression<Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage>> BuildLambdaExpression()
         {
             var profiledObject = Expression.Parameter(typeof(T), "profiledObject");
-            var methodProfileInfo = Expression.Parameter(typeof(MethodProfileInfo<T>), "methodProfileInfo");
+            var methodProfileInfo = Expression.Parameter(typeof(MethodProfilerInfo<T>), "methodProfileInfo");
             var methodInfo = Expression.Parameter(typeof(MethodInfo), "methodInfo");
             var methodCall = Expression.Parameter(typeof(IMethodCallMessage), "methodCall");
 
-            return Expression.Lambda<Func<T, MethodProfileInfo<T>, MethodInfo, IMethodCallMessage, IMessage>>(
+            return Expression.Lambda<Func<T, MethodProfilerInfo<T>, MethodInfo, IMethodCallMessage, IMessage>>(
                 BuildExpression(profiledObject, methodProfileInfo, methodInfo, methodCall),
                 profiledObject,
                 methodProfileInfo,
@@ -250,7 +246,7 @@ namespace ProxyProfiler.Classes
             ParameterExpression methodInfo,
             NewExpression history)
         {
-            var methodAddHistory = typeof(MethodProfileInfo<T>).GetMethod(nameof(MethodProfileInfo<T>.AddHistory));
+            var methodAddHistory = typeof(MethodProfilerInfo<T>).GetMethod(nameof(MethodProfilerInfo<T>.AddHistory));
 
             return Expression.Call(
                 methodProfileInfo,
@@ -297,10 +293,10 @@ namespace ProxyProfiler.Classes
             ParameterExpression profiledObject,
             ParameterExpression methodInfo)
         {
-            var methodCreateObjectProfileInfoKey = typeof(MethodProfileInfo<T>)
-                .GetMethod(nameof(MethodProfileInfo<T>.CreateObjectProfileInfoKey));
-            var methodCreateMethodProfileInfoKey = typeof(MethodProfileInfo<T>)
-                .GetMethod(nameof(MethodProfileInfo<T>.CreateMethodProfileInfoKey));
+            var methodCreateObjectProfileInfoKey = typeof(MethodProfilerInfo<T>)
+                .GetMethod(nameof(MethodProfilerInfo<T>.CreateObjectProfileInfoKey));
+            var methodCreateMethodProfileInfoKey = typeof(MethodProfilerInfo<T>)
+                .GetMethod(nameof(MethodProfilerInfo<T>.CreateMethodProfileInfoKey));
 
             return Expression.Add(
                     Expression.LeftShift(
@@ -326,6 +322,13 @@ namespace ProxyProfiler.Classes
                 Attribute = attribute;
                 ProfilerInstance = profilerInstance;
             }
+        }
+
+        internal sealed class MethodProfileInfo
+        {
+            public int ExecutionCount { get; set; }
+
+            public LinkedList<MethodProfileInfoHistory> History { get; private set; } = new LinkedList<MethodProfileInfoHistory>();
         }
 
         internal sealed class MethodProfileInfoHistory : IMethodExecutionHistory
