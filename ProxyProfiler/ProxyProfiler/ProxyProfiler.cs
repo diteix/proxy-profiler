@@ -8,6 +8,10 @@ using System.Runtime.Remoting.Proxies;
 
 namespace ProxyProfiler
 {
+    /// <summary>
+    /// Expose method to create a object that will be profiled using a proxy
+    /// </summary>
+    /// <typeparam name="T">Type of the interface from the object that will be created</typeparam>
     public class ProxyProfiler<T> : RealProxy where T : class
     {
         private readonly T _profiledObject;
@@ -36,6 +40,11 @@ namespace ProxyProfiler
             return methodProfileInfo.BuiltExpression(_profiledObject, methodProfileInfo, methodInfo, methodCall);
         }
 
+        /// <summary>
+        /// Create an proxied instance of the <paramref name="objectToProfile"/>
+        /// </summary>
+        /// <param name="objectToProfile">Object that will be profiled</param>
+        /// <returns>An proxied instance of the <paramref name="objectToProfile"/></returns>
         public static T Create(T objectToProfile)
         {
             ThrowNotInterfaceException();
@@ -43,6 +52,14 @@ namespace ProxyProfiler
             return (T)new ProxyProfiler<T>(objectToProfile).GetTransparentProxy();
         }
 
+        /// <summary>
+        /// Gets execution history of supplied <paramref name="objectToProfile"/>, 
+        /// <paramref name="methodName"/> and <paramref name="methodArgsTypes"/>
+        /// </summary>
+        /// <param name="profiledObject">Object that was profiled</param>
+        /// <param name="methodName">Name of the method to retrieve history</param>
+        /// <param name="methodArgsTypes">Arguments types of the method to retrieve history</param>
+        /// <returns></returns>
         public static IEnumerable<IMethodExecutionHistory> GetHistory(
             T profiledObject,
             string methodName,
@@ -51,6 +68,12 @@ namespace ProxyProfiler
             return GetHistory(profiledObject, typeof(T).GetMethod(methodName, methodArgsTypes));
         }
 
+        /// <summary>
+        /// Gets execution history of supplied <paramref name="objectToProfile"/> and <paramref name="methodInfo"/>
+        /// </summary>
+        /// <param name="profiledObject">Object that was profiled</param>
+        /// <param name="methodInfo">Method info to retrieve history</param>
+        /// <returns></returns>
         public static IEnumerable<IMethodExecutionHistory> GetHistory(T profiledObject, MethodInfo methodInfo)
         {
             ThrowNotInterfaceException();

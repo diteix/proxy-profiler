@@ -115,9 +115,9 @@ namespace ProxyProfiler.Classes
                 newArgs[0] = Expression.Constant(
                     profiler.ProfilerInstance ??
                     (profiler.ProfilerInstance =
-                        Expression.Lambda(Expression.New(profiler.Attribute.ProfileType)).Compile().DynamicInvoke()));
+                        Expression.Lambda(Expression.New(profiler.Attribute.ProfilerType)).Compile().DynamicInvoke()));
 
-                yield return Expression.Call(Expression.Constant(profiler.Attribute), profilerAction.MakeGenericMethod(profiler.Attribute.ProfileType), newArgs);
+                yield return Expression.Call(Expression.Constant(profiler.Attribute), profilerAction.MakeGenericMethod(profiler.Attribute.ProfilerType), newArgs);
             }
         }
 
@@ -348,16 +348,6 @@ namespace ProxyProfiler.Classes
                 ElapsedMilliseconds = elapsedMilliseconds;
                 ExecutionDateTime = DateTime.Now;
             }
-        }
-
-        public static IEnumerable<Expression> AsNullIfEmpty(IEnumerable<Expression> items)
-        {
-            if (items == null || !items.Any())
-            {
-                return null;
-            }
-
-            return items;
         }
     }
 }

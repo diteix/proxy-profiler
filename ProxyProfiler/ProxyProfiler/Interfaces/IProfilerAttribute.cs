@@ -6,7 +6,7 @@ namespace ProxyProfiler.Interfaces
 {
     internal interface IProfilerAttribute : _Attribute
     {
-        Type ProfileType { get; }
+        Type ProfilerType { get; }
 
         void OnBeforeInvoke<T>(T profiler, MethodInfo methodToInvoke, object[] beforeInvokeArgs) where T : class, new();
 
