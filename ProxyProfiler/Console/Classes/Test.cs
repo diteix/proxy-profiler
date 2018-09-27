@@ -15,14 +15,24 @@ namespace Console.Classes
 
         }
 
+        public void TestMoreParams(int p, int p2)
+        {
+
+        }
+
         public string TestReturnNoParams()
         {
             return "TestReturnNoParams";
         }
 
-        public int TestReturnParams(int p)
+        public string TestReturnParams(int p)
         {
-            return p;
+            return "TestReturnParams";
+        }
+
+        public string TestReturnMoreParams(int p, int p2)
+        {
+            return "TestReturnMoreParams";
         }
 
         public async Task TestNoParamsAsync()
@@ -42,11 +52,11 @@ namespace Console.Classes
             return "TestReturnNoParamsAsync";
         }
 
-        public async Task<int> TestReturnParamsAsync(int p)
+        public async Task<string> TestReturnParamsAsync(int p)
         {
             await Task.Delay(1000);
 
-            return p;
+            return "TestReturnParamsAsync";
         }
 
         public void TestOutParams(out int p)
@@ -54,11 +64,52 @@ namespace Console.Classes
             p = 1;
         }
 
+        public void TestOutMoreParams(int p, out int p2)
+        {
+            p2 = p;
+        }
+
         public string TestReturnOutParams(out int p)
         {
             p = 1;
 
-            return "TestOutParams";
+            return "TestReturnOutParams";
+        }
+
+        public string TestReturnOutMoreParams(int p, out int p2)
+        {
+            p2 = p;
+
+            return "TestReturnOutMoreParams";
+        }
+
+        public void TestRefParams(ref int p)
+        {
+            p = 1;
+        }
+
+        public void TestRefMoreParams(int p, ref int p2)
+        {
+            p2 = p;
+        }
+
+        public string TestReturnRefParams(ref int p)
+        {
+            p = 1;
+
+            return "TestReturnRefParams";
+        }
+
+        public string TestReturnRefMoreParams(int p, ref int p2)
+        {
+            p2 = p;
+
+            return "TestReturnRefMoreParams";
+        }
+
+        public int TestReturnDefaultParams(int p = 2)
+        {
+            return p;
         }
     }
 }

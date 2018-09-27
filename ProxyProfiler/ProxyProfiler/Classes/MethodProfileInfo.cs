@@ -157,31 +157,37 @@ namespace ProxyProfiler.Classes
             var method = typeof(MethodBase).GetMethods()
                 .FirstOrDefault(s => s.Name == nameof(MethodBase.Invoke) && s.GetParameters().Count() == 2);
 
+            var outRefArgs = Expression.Parameter(typeof(object[]), "outRefArgs");
+
             return Expression.Block(
                 typeof(IMessage),
-                    Expression.Block(this.ExecuteProfilersBefore(methodInfo)),
-                    Expression.Call(stopWatch, typeof(Stopwatch).GetMethod(nameof(Stopwatch.Start))),
-                    Expression.Assign(
-                        invokeResult,
-                        Expression.Call(
-                            methodInfo,
-                            method,
-                            profiledObject,
-                            Expression.PropertyOrField(
-                                Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args)))),
-                    Expression.New(
-                        typeof(ReturnMessage).GetConstructors()[0],
-                        invokeResult,
-                        Expression.Constant(new object[] { }, typeof(object[])),
-                        Expression.Subtract(
-                            Expression.PropertyOrField(
-                                Expression.Convert(methodCall, typeof(IMethodMessage)),
-                                nameof(IMethodMessage.ArgCount)),
-                            Expression.PropertyOrField(methodCall, nameof(IMethodCallMessage.InArgCount))),
+                new[] { outRefArgs },
+                Expression.Block(this.ExecuteProfilersBefore(methodInfo)),
+                Expression.Assign(
+                    outRefArgs,
+                    Expression.PropertyOrField(
+                        Expression.Convert(methodCall, typeof(IMethodMessage)), nameof(IMethodMessage.Args))),
+                Expression.Call(stopWatch, typeof(Stopwatch).GetMethod(nameof(Stopwatch.Start))),
+                Expression.Assign(
+                    invokeResult,
+                    Expression.Call(
+                        methodInfo,
+                        method,
+                        profiledObject,
+                        outRefArgs)),
+                Expression.New(
+                    typeof(ReturnMessage).GetConstructors()[0],
+                    invokeResult,
+                    outRefArgs,
+                    Expression.Subtract(
                         Expression.PropertyOrField(
                             Expression.Convert(methodCall, typeof(IMethodMessage)),
-                            nameof(IMethodMessage.LogicalCallContext)),
-                        methodCall));
+                            nameof(IMethodMessage.ArgCount)),
+                        Expression.PropertyOrField(methodCall, nameof(IMethodCallMessage.InArgCount))),
+                    Expression.PropertyOrField(
+                        Expression.Convert(methodCall, typeof(IMethodMessage)),
+                        nameof(IMethodMessage.LogicalCallContext)),
+                    methodCall));
         }
 
         private ConditionalExpression BuildFinallyBody(

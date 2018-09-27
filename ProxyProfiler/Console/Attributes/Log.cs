@@ -23,7 +23,7 @@ namespace Console.Attributes
         {
             var instance = (ILog)profiler;
 
-            instance.Debug("teste atributo after");
+            instance.Debug("teste atributo after " + invokeResult?.ToString());
         }
 
         public override void OnInvokeException<T>(T profiler, MethodInfo invokedMethod, Exception exception)

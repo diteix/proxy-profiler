@@ -13,10 +13,16 @@ namespace Console.Interfaces
         void TestParams(int p);
 
         [Log(typeof(Log))]
+        void TestMoreParams(int p, int p2);
+
+        [Log(typeof(Log))]
         string TestReturnNoParams();
 
         [Log(typeof(Log))]
-        int TestReturnParams(int p);
+        string TestReturnParams(int p);
+
+        [Log(typeof(Log))]
+        string TestReturnMoreParams(int p, int p2);
 
         [Log(typeof(Log))]
         Task TestNoParamsAsync();
@@ -28,12 +34,33 @@ namespace Console.Interfaces
         Task<string> TestReturnNoParamsAsync();
 
         [Log(typeof(Log))]
-        Task<int> TestReturnParamsAsync(int p);
+        Task<string> TestReturnParamsAsync(int p);
 
         [Log(typeof(Log))]
         void TestOutParams(out int p);
 
         [Log(typeof(Log))]
+        void TestOutMoreParams(int p, out int p2);
+
+        [Log(typeof(Log))]
         string TestReturnOutParams(out int p);
+
+        [Log(typeof(Log))]
+        string TestReturnOutMoreParams(int p, out int p2);
+
+        [Log(typeof(Log))]
+        void TestRefParams(ref int p);
+
+        [Log(typeof(Log))]
+        void TestRefMoreParams(int p, ref int p2);
+
+        [Log(typeof(Log))]
+        string TestReturnRefParams(ref int p);
+
+        [Log(typeof(Log))]
+        string TestReturnRefMoreParams(int p, ref int p2);
+
+        [Log(typeof(Log))]
+        int TestReturnDefaultParams(int p = 2);
     }
 }
