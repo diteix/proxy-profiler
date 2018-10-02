@@ -5,3 +5,5 @@
 You can use it as you like, respecting MIT license.
 
 `ProxyProfiler` just keeps track of methods execution count, date and time of execution, arguments supplied to method and arguments after method execution and miliseconds elapsed to complete execution.
+
+For more information, look at Wiki!
