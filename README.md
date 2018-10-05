@@ -1,6 +1,6 @@
 # proxy-profiler [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-`ProxyProfiler` is a personal project that I started to study [AOP](https://en.wikipedia.org/wiki/AOP). Developing the code, I decided to include [Expression Trees](https://www.geeksforgeeks.org/expression-tree/) for the purpose of study too. This quickly became a reasonable tool and I decided to make it a GitHub project.
+`ProxyProfiler` is a personal project that I started to study [AOP](https://en.wikipedia.org/wiki/Aspect-oriented_programming). Developing the code, I decided to include [Expression Trees](https://www.geeksforgeeks.org/expression-tree/) for the purpose of study too. This quickly became a reasonable tool and I decided to make it a GitHub project.
 
 You can use it as you like, respecting MIT license.
 
